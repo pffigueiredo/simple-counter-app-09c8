@@ -1,13 +1,32 @@
 
+import { db } from '../db';
+import { countersTable } from '../db/schema';
 import { type Counter } from '../schema';
 
 export async function getCounter(): Promise<Counter> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching the current counter value from the database.
-    // If no counter exists, it should create one with initial value 0.
-    return {
-        id: 1,
-        value: 0,
-        updated_at: new Date()
-    } as Counter;
+  try {
+    // Try to get the first counter from the database
+    const result = await db.select()
+      .from(countersTable)
+      .limit(1)
+      .execute();
+
+    // If no counter exists, create one with initial value 0
+    if (result.length === 0) {
+      const newCounter = await db.insert(countersTable)
+        .values({
+          value: 0
+        })
+        .returning()
+        .execute();
+
+      return newCounter[0];
+    }
+
+    // Return the existing counter
+    return result[0];
+  } catch (error) {
+    console.error('Get counter failed:', error);
+    throw error;
+  }
 }
